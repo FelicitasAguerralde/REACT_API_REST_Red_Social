@@ -20,10 +20,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//Cargar conf rutas (ruta de prueba)
-app.get("/ruta-prueba", (req, res) => {
-    res.status(200).send("API REST con Node.js y MongoDB");
-});
+//Cargar conf rutas
+const userRoutes = require("./routes/user");
+const publicationRoutes = require("./routes/publication");
+const followRoutes = require("./routes/follow");
+
+//Usar rutas
+app.use("/api", userRoutes);
+app.use("/api", publicationRoutes);
+app.use("/api", followRoutes);
 
 //Poner servidor a escuchar peticiones http
 app.listen(port, () => {
