@@ -9,7 +9,7 @@ Antes comprobar que se tiene instalado node **node --version** y MongoDB
 - Multer: **npm install multer**
 - Moment: **npm install moment**
 - Validator: **npm install validator**
-- BCrypt-nodejs: **npm install bcrypt-nodejs**
+- BCrypt: **npm install bcrypt**
 - JWT-simple: **npm install jwt-simple**
 - Cors: **npm install cors**
 
