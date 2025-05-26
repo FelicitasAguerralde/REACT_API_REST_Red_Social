@@ -3,13 +3,13 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 
 // Importar servicios
-const jwt = require ("../services/jwt");
-
+const jwt = require("../services/jwt");
 
 //Acciones de prueba
 const pruebaUser = (req, res) => {
   return res.status(200).json({
     message: "Acciones de prueba: controlador de usuarios",
+    user: req.user,
   });
 };
 
@@ -131,8 +131,84 @@ const login = async (req, res) => {
   }
 };
 
+// Autenticación
+const auth = async (req, res) => {
+  try {
+    // Obtener el token
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).send({
+        status: "error",
+        message: "No hay token de autenticación",
+      });
+    }
+
+    // Verificar token
+    const decoded = jwt.decodeToken(token);
+
+    if (!decoded) {
+      return res.status(401).send({
+        status: "error",
+        message: "Token inválido",
+      });
+    }
+
+    // Buscar usuario
+    const user = await User.findById(decoded.id).select({ password: 0 });
+
+    if (!user) {
+      return res.status(404).send({
+        status: "error",
+        message: "Usuario no encontrado",
+      });
+    }
+
+    return res.status(200).send({
+      status: "success",
+      message: "Autenticación exitosa",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error en la autenticación",
+    });
+  }
+};
+
+const profile = async (req, res) => {
+  try {
+    // Recibir el parámetro del id de user por la url
+    const id = req.params.id;
+
+    // Consulta para obtener los datos del user
+    const userProfile = await User.findById(id).select({ password: 0 , role: 0});
+
+    if (!userProfile) {
+      return res.status(404).send({
+        status: "error",
+        message: "El usuario no existe",
+      });
+    }
+
+    // Devolver el resultado
+    return res.status(200).send({
+      status: "success",
+      user: userProfile
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error al obtener el perfil del usuario"
+    });
+  }
+};
+
 module.exports = {
   pruebaUser,
   register,
   login,
+  auth,
+  profile
 };

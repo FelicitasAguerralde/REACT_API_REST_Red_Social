@@ -16,11 +16,14 @@ const createToken = (user) =>{
         role: user.role,
         image: user.image,
         iat: moment().unix(),
-        exp: moment().add(30, "days").unix
+        exp: moment().add(30, "days").unix()
     }
 
 //Devolver jwt codificado
 return jwt.encode(payload, secret);
 }
 
-module.exports= {createToken};
+module.exports= {
+    secret,
+    createToken
+};
