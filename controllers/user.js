@@ -1,6 +1,7 @@
 // Importar dependencias y modulos
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const mongoosePagination = require("mongoose-pagination");
 
 // Importar servicios
 const jwt = require("../services/jwt");
@@ -205,10 +206,57 @@ const profile = async (req, res) => {
   }
 };
 
+const list = async (req, res) => {
+    try {
+        // Controlar en que pag estamos
+        let page = 1;
+        if(req.params.page){
+            page = parseInt(req.params.page);
+        }
+
+        // Consulta con mongoose paginate
+        let itemsPerPage = 5;
+
+        const options = {
+            page: page,
+            limit: itemsPerPage,
+            sort: { id: 1 },
+            select: { password: 0, role: 0 } // Para excluir campos
+        };
+
+        const result = await User.paginate({}, options);
+
+        if(!result.docs || result.docs.length === 0) {
+            return res.status(404).send({
+                status: "error",
+                message: "No hay usuarios disponibles"
+            });
+        }
+
+        // Devolver el resultado
+        return res.status(200).send({
+            status: "success",
+            users: result.docs,
+            page: result.page,
+            itemsPerPage: result.limit,
+            total: result.totalDocs,
+            pages: result.totalPages
+        });
+
+    } catch (error) {
+        return res.status(500).send({
+            status: "error",
+            message: "Error al obtener la lista de usuarios",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
   pruebaUser,
   register,
   login,
   auth,
-  profile
+  profile, 
+  list
 };
