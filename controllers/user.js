@@ -1,10 +1,12 @@
-// Impprtar dependencias y modulos
-const user = require("../models/user");
+// Importar dependencias y modulos
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 
-//Acciones de prueba
+// Importar servicios
+const jwt = require ("../services/jwt");
 
+
+//Acciones de prueba
 const pruebaUser = (req, res) => {
   return res.status(200).json({
     message: "Acciones de prueba: controlador de usuarios",
@@ -54,11 +56,11 @@ const register = async (req, res) => {
   // Guardar user en bbdd
   try {
     const userStored = await userToSave.save();
-    
+
     if (!userStored) {
       return res.status(500).send({
         status: "error",
-        message: "Error al guardar el usuario"
+        message: "Error al guardar el usuario",
       });
     }
 
@@ -66,74 +68,71 @@ const register = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Usuario registrado correctamente",
-      user: userStored
+      user: userStored,
     });
   } catch (error) {
     return res.status(500).json({
       status: "error",
-      message: "Error al registrar el usuario"
+      message: "Error al registrar el usuario",
     });
   }
 };
 
-
 // Login
 const login = async (req, res) => {
-    // Recoger los paramtros del body
-    let params = req.body;
-    if(!params.email || !params.password){
-        return res.status(400).send({
-            status:"error",
-            message:"Faltan datos por enviar"
-        });
+  // Recoger los paramtros del body
+  let params = req.body;
+  if (!params.email || !params.password) {
+    return res.status(400).send({
+      status: "error",
+      message: "Faltan datos por enviar",
+    });
+  }
+
+  try {
+    // Buscar si existe en la bbdd
+    const user = await User.findOne({ email: params.email });
+
+    if (!user) {
+      return res.status(404).send({
+        status: "error",
+        message: "No existe el usuario",
+      });
     }
 
-    try {
-        // Buscar si existe en la bbdd
-        const user = await User.findOne({email: params.email});
-        
-        if(!user) {
-            return res.status(404).send({
-                status: "error", 
-                message: "No existe el usuario"
-            });
-        };
+    // Comprobar la contraseña
+    let pwd = bcrypt.compareSync(params.password, user.password);
 
-        // Comprobar la contraseña
-        let pwd = bcrypt.compareSync(params.password, user.password);
-
-        if(!pwd){
-            return res.status(400).send({
-                status: "error",
-                message: "No te has logueado correctamente"
-            })
-        }
-        // Devolver Token
-        const token = false;
-
-        // Devolver datos user
-
-        return res.status(200).send({
-            status: "success",
-            message: "Te has logueado correctamente",
-            user:{
-                name: user.name,
-                surname: user.surname
-            },
-            token
-        });
-
-    } catch (error) {
-        return res.status(500).send({
-            status: "error",
-            message: "No se ha podido loguear el usuario"
-        });
+    if (!pwd) {
+      return res.status(400).send({
+        status: "error",
+        message: "No te has logueado correctamente",
+      });
     }
-}
+    // Devolver Token
+    const token = jwt.createToken(user);
 
+    // Devolver datos user
+
+    return res.status(200).send({
+      status: "success",
+      message: "Te has logueado correctamente",
+      user: {
+        name: user.name,
+        surname: user.surname,
+      },
+      token,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "No se ha podido loguear el usuario",
+    });
+  }
+};
 
 module.exports = {
   pruebaUser,
   register,
-  login
+  login,
 };
