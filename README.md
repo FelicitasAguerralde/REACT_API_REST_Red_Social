@@ -24,3 +24,6 @@ start cmd.exe /k "cd C:\Users\Usuario\Documents\0000 React\API-REST-RedSocial &&
 5. Crear la coneción a la base
 
 6. Crear los controladores y las rutas
+
+### Importante:
+La versión más reciente de Mongoose no acepta callbacks. Usar async/await, que es la forma más moderna y recomendada.
