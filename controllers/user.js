@@ -252,11 +252,119 @@ const list = async (req, res) => {
     }
 };
 
+const update = async (req, res)=> {
+  try {
+    // Recoger info del user a actualizar
+    const userIdentity = req.user;
+    const userToUpdate = req.body;
+
+    // Validar que exista el usuario a actualizar
+    if (!userIdentity || !userIdentity.id) {
+      return res.status(400).send({
+        status: "error",
+        message: "No se ha proporcionado un usuario válido para actualizar"
+      });
+    }
+
+    // Eliminar los campos que no quiero actualizar
+    delete userToUpdate.iat;
+    delete userToUpdate.exp;
+    delete userToUpdate.role;
+
+    // Validar que haya datos para actualizar
+    if (Object.keys(userToUpdate).length === 0) {
+      return res.status(400).send({
+        status: "error",
+        message: "No hay datos para actualizar"
+      });
+    }
+
+    // Comprobar si el usuario ya existe
+    const users = await User.find({
+      $or: [
+        { email: userToUpdate.email?.toLowerCase() },
+        { nick: userToUpdate.nick?.toLowerCase() },
+      ],
+    });
+
+    let userIsset = false;
+    users.forEach(user=>{
+      if(user && user.id != userIdentity.id) userIsset = true;
+    });
+
+    if(userIsset){
+      return res.status(409).send({
+        status: "error",
+        message: "El email o nick ya está en uso por otro usuario"
+      });
+    }
+
+    // Cifrar contraseña si se proporciona
+    if(userToUpdate.password){
+      try {
+        const hash = await bcrypt.hash(userToUpdate.password, 10);
+        userToUpdate.password = hash;
+      } catch (error) {
+        return res.status(500).send({
+          status: "error",
+          message: "Error al cifrar la contraseña"
+        });
+      }
+    }
+
+    // Buscar y actualizar
+    const userUpdated = await User.findByIdAndUpdate(
+      userIdentity.id, 
+      userToUpdate, 
+      { 
+        new: true,
+        runValidators: true // Activar validadores de mongoose
+      }
+    );
+
+    if (!userUpdated) {
+      return res.status(404).send({
+        status: "error",
+        message: "No se encontró el usuario para actualizar"
+      });
+    }
+
+    return res.status(200).send({
+      status: "success",
+      message: "Usuario actualizado correctamente",
+      user: userUpdated
+    });
+  } catch (error) {
+    // Manejar errores específicos de Mongoose
+    if (error.name === 'ValidationError') {
+      return res.status(400).send({
+        status: "error",
+        message: "Error de validación en los datos",
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+    if (error.name === 'CastError') {
+      return res.status(400).send({
+        status: "error",
+        message: "ID de usuario inválido"
+      });
+    }
+
+    return res.status(500).send({
+      status: "error",
+      message: "Error al actualizar el usuario",
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   pruebaUser,
   register,
   login,
   auth,
   profile, 
-  list
+  list,
+  update
 };

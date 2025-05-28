@@ -5,7 +5,7 @@ Antes comprobar que se tiene instalado node **node --version** y MongoDB
 2. Instalar dependencias y librerías
 - Express: **npm install express**
 - Mongoose: **npm install mongoose**
-- Mongose pagination: **npm install mongoose-pagination**
+- Mongose pagination v2: **npm install mongoose-pagination-v2**
 - Multer: **npm install multer**
 - Moment: **npm install moment**
 - Validator: **npm install validator**
