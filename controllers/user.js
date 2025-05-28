@@ -2,6 +2,7 @@
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const mongoosePagination = require("mongoose-pagination");
+const fileSystem = require("fs");
 
 // Importar servicios
 const jwt = require("../services/jwt");
@@ -357,7 +358,89 @@ const update = async (req, res)=> {
       error: error.message
     });
   }
-}
+};
+
+// Metodo de carga de imagenes
+const upload = async (req, res) => {
+  try {
+    // Recoger el archivo de imagen, comprobar que existe
+    if(!req.file){
+      return res.status(404).send({
+        status: "error",
+        message: "La petición no incluye la imagen"
+      });
+    }
+
+    // Conseguir el nombre del archivo
+    let image = req.file.originalname;
+
+    // Sacar la extensión del archivo
+    const imageSplit = image.split(".");
+    const extension = imageSplit[imageSplit.length - 1].toLowerCase();
+
+    // Comprobar extensión
+    const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
+    
+    if(!allowedExtensions.includes(extension)){
+      // Eliminar fichero subido
+      try {
+        await fileSystem.promises.unlink(req.file.path);
+      } catch (error) {
+        console.error("Error al eliminar archivo inválido:", error);
+      }
+
+      return res.status(400).send({
+        status: "error",
+        message: "Extensión del archivo inválida. Extensiones permitidas: " + allowedExtensions.join(", ")
+      });
+    }
+
+    // Si es correcta, guardar img en bbdd
+    const userUpdated = await User.findByIdAndUpdate(
+      req.user.id,
+      { image: req.file.filename },
+      { new: true }
+    );
+
+    if (!userUpdated) {
+      // Si falla la actualización, eliminar la imagen
+      try {
+        await fileSystem.promises.unlink(req.file.path);
+      } catch (error) {
+        console.error("Error al eliminar archivo después de fallo en actualización:", error);
+      }
+
+      return res.status(500).send({
+        status: "error",
+        message: "Error al actualizar el usuario con la imagen"
+      });
+    }
+
+    // Devolver resultado
+    return res.status(200).json({
+      status: "success",
+      message: "Imagen subida correctamente",
+      user: userUpdated,
+      file: req.file
+    });
+
+  } catch (error) {
+    // Si ocurre cualquier error, intentar eliminar la imagen
+    if (req.file?.path) {
+      try {
+        await fileSystem.promises.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error("Error al eliminar archivo después de error:", unlinkError);
+      }
+    }
+
+    return res.status(500).send({
+      status: "error",
+      message: "Error al procesar la imagen",
+      error: error.message
+    });
+  }
+};
 
 module.exports = {
   pruebaUser,
@@ -366,5 +449,6 @@ module.exports = {
   auth,
   profile, 
   list,
-  update
+  update,
+  upload
 };
