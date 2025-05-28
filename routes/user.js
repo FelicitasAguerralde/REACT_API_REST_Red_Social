@@ -26,6 +26,7 @@ router.get("/list/:page", check.auth, userController.list);
 router.get("/list", check.auth, userController.list);
 router.put("/update", check.auth, userController.update);
 router.post("/upload", [check.auth, uploads.single("file0")], userController.upload);
+router.get("/avatar/:file", check.auth, userController.avatar);
 
 //Exportar router
 module.exports = router;

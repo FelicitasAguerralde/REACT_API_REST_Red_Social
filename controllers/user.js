@@ -3,6 +3,7 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const mongoosePagination = require("mongoose-pagination");
 const fileSystem = require("fs");
+const path = require("path");
 
 // Importar servicios
 const jwt = require("../services/jwt");
@@ -185,7 +186,10 @@ const profile = async (req, res) => {
     const id = req.params.id;
 
     // Consulta para obtener los datos del user
-    const userProfile = await User.findById(id).select({ password: 0 , role: 0});
+    const userProfile = await User.findById(id).select({
+      password: 0,
+      role: 0,
+    });
 
     if (!userProfile) {
       return res.status(404).send({
@@ -197,63 +201,62 @@ const profile = async (req, res) => {
     // Devolver el resultado
     return res.status(200).send({
       status: "success",
-      user: userProfile
+      user: userProfile,
     });
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: "Error al obtener el perfil del usuario"
+      message: "Error al obtener el perfil del usuario",
     });
   }
 };
 
 const list = async (req, res) => {
-    try {
-        // Controlar en que pag estamos
-        let page = 1;
-        if(req.params.page){
-            page = parseInt(req.params.page);
-        }
-
-        // Consulta con mongoose paginate
-        let itemsPerPage = 5;
-
-        const options = {
-            page: page,
-            limit: itemsPerPage,
-            sort: { id: 1 },
-            select: { password: 0, role: 0 } // Para excluir campos
-        };
-
-        const result = await User.paginate({}, options);
-
-        if(!result.docs || result.docs.length === 0) {
-            return res.status(404).send({
-                status: "error",
-                message: "No hay usuarios disponibles"
-            });
-        }
-
-        // Devolver el resultado
-        return res.status(200).send({
-            status: "success",
-            users: result.docs,
-            page: result.page,
-            itemsPerPage: result.limit,
-            total: result.totalDocs,
-            pages: result.totalPages
-        });
-
-    } catch (error) {
-        return res.status(500).send({
-            status: "error",
-            message: "Error al obtener la lista de usuarios",
-            error: error.message
-        });
+  try {
+    // Controlar en que pag estamos
+    let page = 1;
+    if (req.params.page) {
+      page = parseInt(req.params.page);
     }
+
+    // Consulta con mongoose paginate
+    let itemsPerPage = 5;
+
+    const options = {
+      page: page,
+      limit: itemsPerPage,
+      sort: { id: 1 },
+      select: { password: 0, role: 0 }, // Para excluir campos
+    };
+
+    const result = await User.paginate({}, options);
+
+    if (!result.docs || result.docs.length === 0) {
+      return res.status(404).send({
+        status: "error",
+        message: "No hay usuarios disponibles",
+      });
+    }
+
+    // Devolver el resultado
+    return res.status(200).send({
+      status: "success",
+      users: result.docs,
+      page: result.page,
+      itemsPerPage: result.limit,
+      total: result.totalDocs,
+      pages: result.totalPages,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error al obtener la lista de usuarios",
+      error: error.message,
+    });
+  }
 };
 
-const update = async (req, res)=> {
+const update = async (req, res) => {
   try {
     // Recoger info del user a actualizar
     const userIdentity = req.user;
@@ -263,7 +266,7 @@ const update = async (req, res)=> {
     if (!userIdentity || !userIdentity.id) {
       return res.status(400).send({
         status: "error",
-        message: "No se ha proporcionado un usuario válido para actualizar"
+        message: "No se ha proporcionado un usuario válido para actualizar",
       });
     }
 
@@ -276,7 +279,7 @@ const update = async (req, res)=> {
     if (Object.keys(userToUpdate).length === 0) {
       return res.status(400).send({
         status: "error",
-        message: "No hay datos para actualizar"
+        message: "No hay datos para actualizar",
       });
     }
 
@@ -289,73 +292,73 @@ const update = async (req, res)=> {
     });
 
     let userIsset = false;
-    users.forEach(user=>{
-      if(user && user.id != userIdentity.id) userIsset = true;
+    users.forEach((user) => {
+      if (user && user.id != userIdentity.id) userIsset = true;
     });
 
-    if(userIsset){
+    if (userIsset) {
       return res.status(409).send({
         status: "error",
-        message: "El email o nick ya está en uso por otro usuario"
+        message: "El email o nick ya está en uso por otro usuario",
       });
     }
 
     // Cifrar contraseña si se proporciona
-    if(userToUpdate.password){
+    if (userToUpdate.password) {
       try {
         const hash = await bcrypt.hash(userToUpdate.password, 10);
         userToUpdate.password = hash;
       } catch (error) {
         return res.status(500).send({
           status: "error",
-          message: "Error al cifrar la contraseña"
+          message: "Error al cifrar la contraseña",
         });
       }
     }
 
     // Buscar y actualizar
     const userUpdated = await User.findByIdAndUpdate(
-      userIdentity.id, 
-      userToUpdate, 
-      { 
+      userIdentity.id,
+      userToUpdate,
+      {
         new: true,
-        runValidators: true // Activar validadores de mongoose
+        runValidators: true, // Activar validadores de mongoose
       }
     );
 
     if (!userUpdated) {
       return res.status(404).send({
         status: "error",
-        message: "No se encontró el usuario para actualizar"
+        message: "No se encontró el usuario para actualizar",
       });
     }
 
     return res.status(200).send({
       status: "success",
       message: "Usuario actualizado correctamente",
-      user: userUpdated
+      user: userUpdated,
     });
   } catch (error) {
     // Manejar errores específicos de Mongoose
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).send({
         status: "error",
         message: "Error de validación en los datos",
-        errors: Object.values(error.errors).map(err => err.message)
+        errors: Object.values(error.errors).map((err) => err.message),
       });
     }
 
-    if (error.name === 'CastError') {
+    if (error.name === "CastError") {
       return res.status(400).send({
         status: "error",
-        message: "ID de usuario inválido"
+        message: "ID de usuario inválido",
       });
     }
 
     return res.status(500).send({
       status: "error",
       message: "Error al actualizar el usuario",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -364,10 +367,10 @@ const update = async (req, res)=> {
 const upload = async (req, res) => {
   try {
     // Recoger el archivo de imagen, comprobar que existe
-    if(!req.file){
+    if (!req.file) {
       return res.status(404).send({
         status: "error",
-        message: "La petición no incluye la imagen"
+        message: "La petición no incluye la imagen",
       });
     }
 
@@ -380,8 +383,8 @@ const upload = async (req, res) => {
 
     // Comprobar extensión
     const allowedExtensions = ["png", "jpg", "jpeg", "gif"];
-    
-    if(!allowedExtensions.includes(extension)){
+
+    if (!allowedExtensions.includes(extension)) {
       // Eliminar fichero subido
       try {
         await fileSystem.promises.unlink(req.file.path);
@@ -391,7 +394,9 @@ const upload = async (req, res) => {
 
       return res.status(400).send({
         status: "error",
-        message: "Extensión del archivo inválida. Extensiones permitidas: " + allowedExtensions.join(", ")
+        message:
+          "Extensión del archivo inválida. Extensiones permitidas: " +
+          allowedExtensions.join(", "),
       });
     }
 
@@ -407,12 +412,15 @@ const upload = async (req, res) => {
       try {
         await fileSystem.promises.unlink(req.file.path);
       } catch (error) {
-        console.error("Error al eliminar archivo después de fallo en actualización:", error);
+        console.error(
+          "Error al eliminar archivo después de fallo en actualización:",
+          error
+        );
       }
 
       return res.status(500).send({
         status: "error",
-        message: "Error al actualizar el usuario con la imagen"
+        message: "Error al actualizar el usuario con la imagen",
       });
     }
 
@@ -421,25 +429,46 @@ const upload = async (req, res) => {
       status: "success",
       message: "Imagen subida correctamente",
       user: userUpdated,
-      file: req.file
+      file: req.file,
     });
-
   } catch (error) {
     // Si ocurre cualquier error, intentar eliminar la imagen
     if (req.file?.path) {
       try {
         await fileSystem.promises.unlink(req.file.path);
       } catch (unlinkError) {
-        console.error("Error al eliminar archivo después de error:", unlinkError);
+        console.error(
+          "Error al eliminar archivo después de error:",
+          unlinkError
+        );
       }
     }
 
     return res.status(500).send({
       status: "error",
       message: "Error al procesar la imagen",
-      error: error.message
+      error: error.message,
     });
   }
+};
+
+const avatar = (req, res) => {
+  // Sacar el parametro de la url
+  const file = req.params.file;
+
+  // montar el path real de la imagen
+  const filePath = "./uploads/avatars/" + file;
+
+  // Comprobar que existe
+  fileSystem.stat(filePath, (error, exists) => {
+    if (!exists){
+      return res
+        .status(404)
+        .send({ status: "error", message: "No existe la imagen" });
+    }
+    // Devolver un file
+    return res.sendFile(path.resolve(filePath)); // ruta absoluta
+  });
 };
 
 module.exports = {
@@ -447,8 +476,9 @@ module.exports = {
   register,
   login,
   auth,
-  profile, 
+  profile,
   list,
   update,
-  upload
+  upload,
+  avatar,
 };
