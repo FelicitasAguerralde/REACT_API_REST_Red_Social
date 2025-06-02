@@ -18,22 +18,22 @@ const storage = multer.diskStorage({
 const uploads = multer({ storage });
 
 // Rutas de prueba
-router.get("/prueba", auth, userController.pruebaUser);
+router.get("/user/prueba", auth, userController.pruebaUser);
 
 // Rutas de usuario
-router.post("/register", registerValidators, userController.register);
-router.post("/login", loginValidators, userController.login);
-router.get("/auth", auth, userController.auth);
-router.get("/profile/:id", auth, idParamValidator, userController.profile);
+router.post("/user/register", registerValidators, userController.register);
+router.post("/user/login", loginValidators, userController.login);
+router.get("/user/auth", auth, userController.auth);
+router.get("/user/profile/:id", auth, idParamValidator, userController.profile);
 
 // Rutas con parámetros opcionales
-router.get("/list", auth, userController.list);
-router.get("/list/:page", auth, userController.list);
+router.get("/users", auth, userController.list);
+router.get("/users/:page", auth, userController.list);
 
-router.put("/update", auth, updateUserValidators, userController.update);
-router.post("/upload", auth, uploads.single("file0"), userController.upload);
-router.get("/avatar/:file", userController.avatar);
-router.delete("/delete/:id", auth, idParamValidator, userController.deleteUser);
+router.put("/user/update", auth, updateUserValidators, userController.update);
+router.post("/user/upload", auth, uploads.single("file0"), userController.upload);
+router.get("/user/avatar/:file", userController.avatar);
+router.delete("/user/delete/:id", auth, idParamValidator, userController.deleteUser);
 
 //Exportar router
 module.exports = router;

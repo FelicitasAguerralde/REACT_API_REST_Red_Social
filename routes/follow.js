@@ -5,20 +5,21 @@ const auth = require("../middlewares/auth");
 const { followValidators, idParamValidator } = require("../middlewares/validators");
 
 // Rutas de prueba
-router.get("/prueba", auth, followController.pruebaFollow);
+router.get("/follow/prueba", auth, followController.pruebaFollow);
 
 // Rutas de follow
-router.post("/saveFollow", auth, followValidators, followController.saveFollow);
-router.delete("/unfollow/:id", auth, idParamValidator, followController.unfollow);
+router.post("/follow/save", auth, followValidators, followController.saveFollow);
+router.delete("/follow/delete/:id", auth, idParamValidator, followController.unfollow);
 
-// Rutas con parámetros opcionales
-router.get("/following", auth, followController.following);
-router.get("/following/:id", auth, idParamValidator, followController.following);
-router.get("/following/:id/:page", auth, idParamValidator, followController.following);
+// Rutas de following
+router.get("/follow/following", auth, followController.following);
+router.get("/follow/following/:id", auth, idParamValidator, followController.following);
+router.get("/follow/following/:id/:page", auth, idParamValidator, followController.following);
 
-router.get("/followers", auth, followController.followers);
-router.get("/followers/:id", auth, idParamValidator, followController.followers);
-router.get("/followers/:id/:page", auth, idParamValidator, followController.followers);
+// Rutas de followers
+router.get("/follow/followers", auth, followController.followers);
+router.get("/follow/followers/:id", auth, idParamValidator, followController.followers);
+router.get("/follow/followers/:id/:page", auth, idParamValidator, followController.followers);
 
 //Exportar router
 module.exports = router;

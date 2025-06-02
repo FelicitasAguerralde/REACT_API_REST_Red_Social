@@ -3,7 +3,7 @@
 ## Autenticación
 
 ### Registro de Usuario
-- **URL**: `/api/register`
+- **URL**: `/api/user/register`
 - **Método**: `POST`
 - **Descripción**: Registra un nuevo usuario en el sistema
 - **Body**:
@@ -33,7 +33,7 @@
   ```
 
 ### Login
-- **URL**: `/api/login`
+- **URL**: `/api/user/login`
 - **Método**: `POST`
 - **Descripción**: Autentica a un usuario y devuelve un token JWT
 - **Body**:
@@ -57,7 +57,7 @@
   ```
 
 ### Verificar Autenticación
-- **URL**: `/api/auth`
+- **URL**: `/api/user/auth`
 - **Método**: `GET`
 - **Descripción**: Verifica si el token de autenticación es válido
 - **Headers**: `Authorization: Bearer <token>`
@@ -80,7 +80,7 @@
 ## Usuarios
 
 ### Obtener Perfil
-- **URL**: `/api/users/profile/:id`
+- **URL**: `/api/user/profile/:id`
 - **Método**: `GET`
 - **Descripción**: Obtiene el perfil de un usuario específico
 - **Headers**: `Authorization: Bearer <token>`
@@ -101,7 +101,7 @@
   ```
 
 ### Listar Usuarios
-- **URL**: `/api/list`
+- **URL**: `/api/users`
 - **Método**: `GET`
 - **Descripción**: Lista todos los usuarios
 - **Headers**: `Authorization: Bearer <token>`
@@ -126,14 +126,14 @@
   ```
 
 ### Listar Usuarios con Paginación
-- **URL**: `/api/users/list/:page`
+- **URL**: `/api/users/:page`
 - **Método**: `GET`
 - **Descripción**: Lista usuarios con paginación
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta Exitosa**: Igual que Listar Usuarios
 
 ### Actualizar Usuario
-- **URL**: `/api/users/update`
+- **URL**: `/api/user/update`
 - **Método**: `PUT`
 - **Descripción**: Actualiza los datos del usuario autenticado
 - **Headers**: `Authorization: Bearer <token>`
@@ -164,7 +164,7 @@
   ```
 
 ### Subir Avatar
-- **URL**: `/api/upload`
+- **URL**: `/api/user/upload`
 - **Método**: `POST`
 - **Descripción**: Sube una imagen de perfil
 - **Headers**: 
@@ -182,7 +182,7 @@
   formData.append('file0', archivoImagen);
 
   // Realizar la petición
-  fetch('http://tu-api/api/users/upload', {
+  fetch('http://tu-api/api/user/upload', {
       method: 'POST',
       headers: {
           'Authorization': 'Bearer ' + token
@@ -222,13 +222,13 @@
   ```
 
 ### Obtener Avatar
-- **URL**: `/api/avatar/:file`
+- **URL**: `/api/user/avatar/:file`
 - **Método**: `GET`
 - **Descripción**: Obtiene la imagen de perfil de un usuario
 - **Respuesta**: Archivo de imagen
 
 ### Eliminar Usuario
-- **URL**: `/api/delete/:id`
+- **URL**: `/api/user/delete/:id`
 - **Método**: `DELETE`
 - **Descripción**: Elimina un usuario y sus follows relacionados
 - **Headers**: `Authorization: Bearer <token>`
@@ -250,7 +250,7 @@
 ## Seguimiento
 
 ### Seguir Usuario
-- **URL**: `/api/saveFollow`
+- **URL**: `/api/follow/save`
 - **Método**: `POST`
 - **Descripción**: Seguir a un usuario
 - **Headers**: `Authorization: Bearer <token>`
@@ -275,7 +275,7 @@
   ```
 
 ### Dejar de Seguir
-- **URL**: `/api/unfollow/:id`
+- **URL**: `/api/follow/delete/:id`
 - **Método**: `DELETE`
 - **Descripción**: Dejar de seguir a un usuario
 - **Headers**: `Authorization: Bearer <token>`
@@ -293,7 +293,7 @@
   ```
 
 ### Listar Seguidos
-- **URL**: `/api/following`
+- **URL**: `/api/follow/following`
 - **Método**: `GET`
 - **Descripción**: Lista los usuarios que sigue el usuario autenticado
 - **Headers**: `Authorization: Bearer <token>`
@@ -318,7 +318,7 @@
   ```
 
 ### Listar Seguidos de un Usuario
-- **URL**: `/api/following/:id`
+- **URL**: `/api/follow/following/:id`
 - **Método**: `GET`
 - **Descripción**: Lista los usuarios que sigue un usuario específico
 - **Headers**: `Authorization: Bearer <token>`
@@ -332,7 +332,7 @@
 - **Respuesta Exitosa**: Igual que Listar Seguidos
 
 ### Listar Seguidores
-- **URL**: `/api/followers`
+- **URL**: `/api/follow/followers`
 - **Método**: `GET`
 - **Descripción**: Lista los usuarios que siguen al usuario autenticado
 - **Headers**: `Authorization: Bearer <token>`
@@ -357,18 +357,165 @@
   ```
 
 ### Listar Seguidores de un Usuario
-- **URL**: `/api/followers/:id`
+- **URL**: `/api/follow/followers/:id`
 - **Método**: `GET`
 - **Descripción**: Lista los usuarios que siguen a un usuario específico
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta Exitosa**: Igual que Listar Seguidores
 
 ### Listar Seguidores de un Usuario con Paginación
-- **URL**: `/api/followers/:id/:page`
+- **URL**: `/api/follow/followers/:id/:page`
 - **Método**: `GET`
 - **Descripción**: Lista los usuarios que siguen a un usuario específico con paginación
 - **Headers**: `Authorization: Bearer <token>`
 - **Respuesta Exitosa**: Igual que Listar Seguidores
+
+## Publicaciones
+
+### Guardar Publicación
+- **URL**: `/api/publication/save`
+- **Método**: `POST`
+- **Descripción**: Crea una nueva publicación
+- **Headers**: `Authorization: Bearer <token>`
+- **Body**:
+  ```json
+  {
+    "text": "string",
+    "file": "string (opcional)"
+  }
+  ```
+- **Respuesta Exitosa**:
+  ```json
+  {
+    "status": "success",
+    "message": "Publicación guardada correctamente",
+    "publication": {
+      "id": "string",
+      "user": "string",
+      "text": "string",
+      "file": "string",
+      "createdAt": "date"
+    }
+  }
+  ```
+
+### Eliminar Publicación
+- **URL**: `/api/publication/delete/:id`
+- **Método**: `DELETE`
+- **Descripción**: Elimina una publicación específica
+- **Headers**: `Authorization: Bearer <token>`
+- **Respuesta Exitosa**:
+  ```json
+  {
+    "status": "success",
+    "message": "Publicación eliminada correctamente",
+    "publication": {
+      "id": "string",
+      "user": "string",
+      "text": "string",
+      "file": "string",
+      "createdAt": "date"
+    }
+  }
+  ```
+
+### Obtener Publicación
+- **URL**: `/api/publication/:id`
+- **Método**: `GET`
+- **Descripción**: Obtiene una publicación específica
+- **Headers**: `Authorization: Bearer <token>`
+- **Respuesta Exitosa**:
+  ```json
+  {
+    "status": "success",
+    "publication": {
+      "id": "string",
+      "user": {
+        "id": "string",
+        "name": "string",
+        "surname": "string",
+        "nick": "string",
+        "image": "string"
+      },
+      "text": "string",
+      "file": "string",
+      "createdAt": "date"
+    }
+  }
+  ```
+
+### Listar Publicaciones
+- **URL**: `/api/publications/:page?`
+- **Método**: `GET`
+- **Descripción**: Lista todas las publicaciones con paginación
+- **Headers**: `Authorization: Bearer <token>`
+- **Respuesta Exitosa**:
+  ```json
+  {
+    "status": "success",
+    "publications": [
+      {
+        "id": "string",
+        "user": {
+          "id": "string",
+          "name": "string",
+          "surname": "string",
+          "nick": "string",
+          "image": "string"
+        },
+        "text": "string",
+        "file": "string",
+        "createdAt": "date"
+      }
+    ],
+    "page": "number",
+    "itemsPerPage": "number",
+    "total": "number",
+    "pages": "number"
+  }
+  ```
+
+### Listar Publicaciones de Usuario
+- **URL**: `/api/publications-user/:id/:page?`
+- **Método**: `GET`
+- **Descripción**: Lista las publicaciones de un usuario específico con paginación
+- **Headers**: `Authorization: Bearer <token>`
+- **Respuesta Exitosa**: Igual que Listar Publicaciones
+
+#### Actualizar imagen de publicación
+- **URL**: `/api/publication/upload/:id`
+- **Método**: `POST`
+- **Headers**:
+  - `Authorization`: `Bearer <token>`
+  - `Content-Type`: `multipart/form-data`
+- **Parámetros URL**:
+  - `id`: ID de la publicación a actualizar
+- **Body**:
+  - `file0`: Archivo de imagen (png, jpg, jpeg, gif)
+- **Respuesta exitosa**:
+  ```json
+  {
+    "status": "success",
+    "message": "Imagen actualizada correctamente",
+    "publication": {
+      "user": "id_usuario",
+      "text": "texto de la publicación",
+      "file": "nombre_archivo",
+      "_id": "id_publicacion",
+      "created_at": "fecha_creacion"
+    },
+    "file": {
+      "fieldname": "file0",
+      "originalname": "nombre_original",
+      "encoding": "7bit",
+      "mimetype": "tipo_mime",
+      "destination": "ruta_destino",
+      "filename": "nombre_archivo",
+      "path": "ruta_completa",
+      "size": "tamaño_bytes"
+    }
+  }
+  ```
 
 ## Códigos de Error
 
