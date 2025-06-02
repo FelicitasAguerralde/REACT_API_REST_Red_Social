@@ -26,7 +26,7 @@ router.get("/publications", check, publicationController.getPublications);
 router.get("/publications/:page", check, publicationController.getPublications);
 router.get("/publications-user/:id", check, publicationController.getPublicationsUser);
 router.get("/publications-user/:id/:page", check, publicationController.getPublicationsUser);
-router.get("/media/:file", check, publicationController.media);
+router.get("/media/:file", publicationController.media);
 
 //Exportar router
 module.exports = router;

@@ -517,6 +517,21 @@
   }
   ```
 
+### Obtener Media de Publicación
+- **URL**: `/api/media/:file`
+- **Método**: `GET`
+- **Descripción**: Obtiene la imagen de una publicación
+- **Parámetros URL**:
+  - `file`: Nombre del archivo de la publicación
+- **Respuesta**: Archivo de imagen
+- **Respuesta Error**:
+  ```json
+  {
+    "status": "error",
+    "message": "No existe la imagen"
+  }
+  ```
+
 ## Códigos de Error
 
 - **400**: Error de validación o datos incorrectos
@@ -540,4 +555,29 @@
     }
   ]
 }
-``` 
+```
+
+### Contar Seguidores y Seguidos
+- **URL**: `/api/user/count-follows/:id`
+- **Método**: `GET`
+- **Descripción**: Obtiene el número de seguidores y seguidos de un usuario
+- **Headers**: `Authorization: Bearer <token>`
+- **Parámetros URL**:
+  - `id`: ID del usuario
+- **Respuesta Exitosa**:
+  ```json
+  {
+    "status": "success",
+    "message": "Contador de seguidores y seguidos",
+    "userId": "id_usuario",
+    "followers": "número_seguidores",
+    "following": "número_seguidos"
+  }
+  ```
+- **Respuesta Error**:
+  ```json
+  {
+    "status": "error",
+    "message": "El usuario no existe"
+  }
+  ``` 

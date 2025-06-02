@@ -35,5 +35,15 @@ router.post("/user/upload", auth, uploads.single("file0"), userController.upload
 router.get("/user/avatar/:file", userController.avatar);
 router.delete("/user/delete/:id", auth, idParamValidator, userController.deleteUser);
 
+// Definir rutas
+router.get("/prueba-user", auth, userController.pruebaUser);
+router.get("/users", auth, userController.list);
+router.get("/users/:page", auth, userController.list);
+router.put("/user/update", auth, userController.update);
+router.post("/user/upload", auth, uploads.single("file0"), userController.upload);
+router.get("/user/avatar/:file", userController.avatar);
+router.delete("/user/delete/:id", auth, userController.deleteUser);
+router.get("/user/count-follows/:id", auth, userController.countFollows);
+
 //Exportar router
 module.exports = router;

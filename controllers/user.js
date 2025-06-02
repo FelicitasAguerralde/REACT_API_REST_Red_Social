@@ -546,6 +546,43 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// Metodo contador de seguidos y seguidores
+const countFollows = async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Verificar que el usuario existe
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                status: "error",
+                message: "El usuario no existe"
+            });
+        }
+
+        // Contar seguidores (usuarios que me siguen)
+        const followers = await Follow.countDocuments({ followed: userId });
+        
+        // Contar seguidos (usuarios que sigo)
+        const following = await Follow.countDocuments({ user: userId });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Contador de seguidores y seguidos",
+            userId,
+            followers,
+            following
+        });
+    } catch (error) {
+        console.error("Error en countFollows:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Error al contar los seguidores y seguidos",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
   pruebaUser,
   register,
@@ -556,5 +593,6 @@ module.exports = {
   update,
   upload,
   avatar,
-  deleteUser
+  deleteUser,
+  countFollows
 };
