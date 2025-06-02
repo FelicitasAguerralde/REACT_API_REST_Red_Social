@@ -7,21 +7,31 @@ const libjwt = require("../services/jwt");
 const secret = libjwt.secret;
 
 // MIDDLEWARE: Funcion de autenticacion
-exports.auth = (req, res, next) => {
+const auth = (req, res, next) => {
+  // Debug: Mostrar todos los headers
+  //console.log("Headers recibidos:", req.headers);
+  //console.log("Authorization header:", req.headers.authorization);
+
   // Comprobar si me llega la cabecera de auth
   if (!req.headers.authorization) {
-    return res.status(403).send({
+    return res.status(401).send({
       status: "error",
-      message: "La petición no tiene la cabecera de autenticación",
+      message: "No hay token de autenticación",
+      debug: {
+        headers: req.headers,
+        authHeader: req.headers.authorization
+      }
     });
   }
 
   // Limpiar el token
-  let token = req.headers.authorization.replace(/[' "']+/g, "");
+  let token = req.headers.authorization.replace(/['"]+/g, "");
+  //console.log("Token limpio:", token);
 
   //Decodificar el token
   try {
     let payload = jwt.decode(token, secret);
+    //console.log("Payload decodificado:", payload);
 
     // Comprobar expiracion del token
     if (payload.exp <= moment().unix()) {
@@ -36,10 +46,17 @@ exports.auth = (req, res, next) => {
     // Pasar a ejecución de acción
     next();
   } catch (error) {
-    return res.status(404).send({
+    //console.error("Error decodificando token:", error);
+    return res.status(401).send({
       status: "error",
       message: "Token inválido",
-      error,
+      error: error.message,
+      debug: {
+        token: token,
+        error: error.toString()
+      }
     });
   }
 };
+
+module.exports = auth;

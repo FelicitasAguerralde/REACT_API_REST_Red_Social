@@ -1,12 +1,13 @@
 // Importar dependencias y modulos
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
-const mongoosePagination = require("mongoose-pagination");
 const fileSystem = require("fs");
 const path = require("path");
+const Follow = require("../models/follow");
 
 // Importar servicios
 const jwt = require("../services/jwt");
+const followService = require("../services/followService")
 
 //Acciones de prueba
 const pruebaUser = (req, res) => {
@@ -18,46 +19,57 @@ const pruebaUser = (req, res) => {
 
 // Registrar usuario
 const register = async (req, res) => {
-  // Recoger datos de la peticion
-  let params = req.body;
-  // Controlar que llegue ok y validar
-  if (
-    !params.name ||
-    !params.surname ||
-    !params.nick ||
-    !params.email ||
-    !params.password
-  ) {
-    return res.status(400).json({
-      status: "error",
-      message: "Error en la validación, faltan datos requeridos",
-    });
-  }
-
-  // Control de usuarios duplicados
-  const users = await User.find({
-    $or: [
-      { email: params.email.toLowerCase() },
-      { nick: params.nick.toLowerCase() },
-    ],
-  });
-
-  if (users && users.length >= 1) {
-    return res.status(200).send({
-      status: "success",
-      message: "El usuario ya existe",
-    });
-  }
-
-  // Cifrar contraseña
-  const hash = await bcrypt.hash(params.password, 10);
-  params.password = hash;
-
-  // Crear objeto de usuario
-  let userToSave = new User(params);
-
-  // Guardar user en bbdd
   try {
+    // Recoger datos de la peticion
+    let params = req.body;
+    // Controlar que llegue ok y validar
+    if (
+      !params.name ||
+      !params.surname ||
+      !params.nick ||
+      !params.email ||
+      !params.password
+    ) {
+      return res.status(400).json({
+        status: "error",
+        message: "Error en la validación, faltan datos requeridos",
+        required: {
+          name: !params.name ? "El nombre es requerido" : null,
+          surname: !params.surname ? "El apellido es requerido" : null,
+          nick: !params.nick ? "El nick es requerido" : null,
+          email: !params.email ? "El email es requerido" : null,
+          password: !params.password ? "La contraseña es requerida" : null
+        }
+      });
+    }
+
+    // Control de usuarios duplicados
+    const users = await User.find({
+      $or: [
+        { email: params.email.toLowerCase() },
+        { nick: params.nick.toLowerCase() },
+      ],
+    });
+
+    if (users && users.length >= 1) {
+      return res.status(200).send({
+        status: "success",
+        message: "El usuario ya existe",
+        existingUser: {
+          email: users[0].email === params.email.toLowerCase(),
+          nick: users[0].nick === params.nick.toLowerCase()
+        }
+      });
+    }
+
+    // Cifrar contraseña
+    const hash = await bcrypt.hash(params.password, 10);
+    params.password = hash;
+
+    // Crear objeto de usuario
+    let userToSave = new User(params);
+
+    // Guardar user en bbdd
     const userStored = await userToSave.save();
 
     if (!userStored) {
@@ -74,9 +86,12 @@ const register = async (req, res) => {
       user: userStored,
     });
   } catch (error) {
+    console.error("Error en register:", error);
     return res.status(500).json({
       status: "error",
       message: "Error al registrar el usuario",
+      error: error.message,
+      details: error.errors ? Object.values(error.errors).map(err => err.message) : null
     });
   }
 };
@@ -137,45 +152,39 @@ const login = async (req, res) => {
 // Autenticación
 const auth = async (req, res) => {
   try {
-    // Obtener el token
-    const token = req.headers.authorization?.split(" ")[1];
+    // Obtener el usuario autenticado del request (ya agregado por el middleware de auth)
+    const user = req.user;
 
-    if (!token) {
+    // Verificar si el usuario existe (el middleware ya lo debería haber hecho, pero es una capa extra)
+    if (!user || !user.id) {
       return res.status(401).send({
         status: "error",
-        message: "No hay token de autenticación",
+        message: "Usuario no autenticado o token inválido",
       });
     }
 
-    // Verificar token
-    const decoded = jwt.decodeToken(token);
+    // Buscar el usuario completo en la base de datos si es necesario (select excluyendo password y role)
+    // Si ya tienes los datos necesarios en req.user del payload del token, podrías omitir esta consulta a la BD para optimizar
+    const userProfile = await User.findById(user.id).select({ password: 0, role: 0 });
 
-    if (!decoded) {
-      return res.status(401).send({
-        status: "error",
-        message: "Token inválido",
-      });
-    }
-
-    // Buscar usuario
-    const user = await User.findById(decoded.id).select({ password: 0 });
-
-    if (!user) {
-      return res.status(404).send({
-        status: "error",
-        message: "Usuario no encontrado",
-      });
+    if (!userProfile) {
+        return res.status(404).send({
+            status: "error",
+            message: "Usuario no encontrado en la base de datos",
+        });
     }
 
     return res.status(200).send({
       status: "success",
       message: "Autenticación exitosa",
-      user,
+      user: userProfile,
     });
   } catch (error) {
+    console.error("Error en auth controller:", error);
     return res.status(500).send({
       status: "error",
       message: "Error en la autenticación",
+      error: error.message
     });
   }
 };
@@ -471,6 +480,72 @@ const avatar = (req, res) => {
   });
 };
 
+/**
+ * Eliminar usuario y sus follows relacionados
+ * @param {Request} req - Objeto de petición
+ * @param {Response} res - Objeto de respuesta
+ */
+const deleteUser = async (req, res) => {
+    try {
+        // Obtener el ID del usuario a eliminar
+        const userId = req.params.id;
+
+        // Verificar que el usuario existe
+        const userToDelete = await User.findById(userId);
+        if (!userToDelete) {
+            return res.status(404).json({
+                status: "error",
+                message: "El usuario no existe"
+            });
+        }
+
+        // Verificar que el usuario autenticado es el mismo que se quiere eliminar
+        if (req.user.id !== userId && req.user.role !== "role_admin") {
+            return res.status(403).json({
+                status: "error",
+                message: "No tienes permisos para eliminar este usuario"
+            });
+        }
+
+        try {
+            // Intentar eliminar los follows si existen
+            await Follow.deleteMany({
+                $or: [
+                    { user: userId },
+                    { followed: userId }
+                ]
+            });
+        } catch (followError) {
+            console.log("No se encontraron follows para eliminar o error al eliminarlos:", followError);
+            // Continuamos con la eliminación del usuario incluso si hay error en los follows
+        }
+
+        // Eliminar el usuario
+        const userDeleted = await User.findByIdAndDelete(userId);
+
+        if (!userDeleted) {
+            return res.status(500).json({
+                status: "error",
+                message: "Error al eliminar el usuario"
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "Usuario eliminado correctamente",
+            user: userDeleted
+        });
+
+    } catch (error) {
+        console.error("Error en deleteUser:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Error al eliminar el usuario",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
   pruebaUser,
   register,
@@ -481,4 +556,5 @@ module.exports = {
   update,
   upload,
   avatar,
+  deleteUser
 };

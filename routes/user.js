@@ -1,32 +1,39 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user");
-const check = require("../middlewares/auth");
+const auth = require("../middlewares/auth");
+const { registerValidators, loginValidators, updateUserValidators, idParamValidator } = require("../middlewares/validators");
 const multer = require("multer");
 
 // Configuración de subida
 const storage = multer.diskStorage({
-    destination: (req, file, cb)=>{
+    destination: (req, file, cb) => {
         cb(null, "./uploads/avatars")
     },
-    filename: (req, file, cb) =>{
-        cb(null, "avatar-"+Date.now()+"-"+file.originalname);
+    filename: (req, file, cb) => {
+        cb(null, "avatar-" + Date.now() + "-" + file.originalname);
     }
 });
 
-const uploads = multer({storage});
+const uploads = multer({ storage });
 
+// Rutas de prueba
+router.get("/prueba", auth, userController.pruebaUser);
 
-//Definir rutas
-router.get("/prueba-user", check.auth, userController.pruebaUser);
-router.post("/register", userController.register);
-router.post("/login", userController.login);
-router.get("/profile/:id", check.auth, userController.profile);
-router.get("/list/:page", check.auth, userController.list);
-router.get("/list", check.auth, userController.list);
-router.put("/update", check.auth, userController.update);
-router.post("/upload", [check.auth, uploads.single("file0")], userController.upload);
-router.get("/avatar/:file", check.auth, userController.avatar);
+// Rutas de usuario
+router.post("/register", registerValidators, userController.register);
+router.post("/login", loginValidators, userController.login);
+router.get("/auth", auth, userController.auth);
+router.get("/profile/:id", auth, idParamValidator, userController.profile);
+
+// Rutas con parámetros opcionales
+router.get("/list", auth, userController.list);
+router.get("/list/:page", auth, userController.list);
+
+router.put("/update", auth, updateUserValidators, userController.update);
+router.post("/upload", auth, uploads.single("file0"), userController.upload);
+router.get("/avatar/:file", userController.avatar);
+router.delete("/delete/:id", auth, idParamValidator, userController.deleteUser);
 
 //Exportar router
 module.exports = router;

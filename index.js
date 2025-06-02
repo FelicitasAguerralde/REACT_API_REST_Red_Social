@@ -1,38 +1,49 @@
-//Importar modulos
-const connection = require("./database/connection");
+// Importar dependencias
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
 
-//Mensaje de bienvenida
-console.log("API REST iniciada con Node.js y MongoDB");
+// Importar middlewares
+const errorHandler = require("./middlewares/errorHandler");
 
-// Conexion a la base de datos
-connection();
+// Importar rutas
+const userRoutes = require("./routes/user");
+const followRoutes = require("./routes/follow");
+const publicationRoutes = require("./routes/publication");
 
-//Crear servidor node
+// Crear servidor
 const app = express();
-const port = 3900;
 
-//Configurar cors
+// Configurar cors
 app.use(cors());
 
-//Convertir los datos del body a objetos js
+// Middleware para parsear JSON
 app.use(express.json());
+
+// Middleware para parsear URL-encoded
 app.use(express.urlencoded({ extended: true }));
 
-//Cargar conf rutas
-const userRoutes = require("./routes/user");
-const publicationRoutes = require("./routes/publication");
-const followRoutes = require("./routes/follow");
+// Configurar rutas
+app.use("/api", userRoutes);
+app.use("/api", followRoutes);
+app.use("/api", publicationRoutes);
 
-//Usar rutas
-app.use("/api/user", userRoutes);
-app.use("/api/publication", publicationRoutes);
-app.use("/api/follow", followRoutes);
+// Middleware de manejo de errores
+app.use(errorHandler);
 
-//Poner servidor a escuchar peticiones http
-app.listen(port, () => {
-    console.log("Servidor corriendo en el puerto", port);
-});
+// Conectar a la base de datos
+mongoose.connect("mongodb://localhost:27017/redSocial")
+    .then(() => {
+        console.log("Conexión a la base de datos establecida");
+        
+        // Crear servidor y escuchar peticiones
+        const port = process.env.PORT || 3900;
+        app.listen(port, () => {
+            console.log(`Servidor corriendo en el puerto ${port}`);
+        });
+    })
+    .catch(error => {
+        console.error("Error al conectar a la base de datos:", error);
+    });
 
   
