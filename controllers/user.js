@@ -136,6 +136,7 @@ const login = async (req, res) => {
       status: "success",
       message: "Te has logueado correctamente",
       user: {
+        _id: user._id,
         name: user.name,
         surname: user.surname,
       },

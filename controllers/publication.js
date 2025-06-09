@@ -323,6 +323,23 @@ const media = (req, res) => {
     });
 };
 
+    // Contador de publicaciones
+    const countPublications = async (req, res) => {
+        try {
+          const userId = req.params.id;
+          const count = await Publication.countDocuments({ user: userId });
+          return res.status(200).json({
+            status: "success",
+            total: count
+          });
+        } catch (error) {
+          return res.status(500).json({
+            status: "error",
+            message: "Error al contar publicaciones"
+          });
+        }
+      };
+      
 module.exports = {
     pruebaPublication,
     savePublication,
@@ -331,5 +348,6 @@ module.exports = {
     getPublications,
     getPublicationsUser, 
     upload,
-    media
+    media,
+    countPublications
 };
